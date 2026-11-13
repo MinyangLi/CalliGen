@@ -21,3 +21,15 @@ python /hpc2hdd/home/mli861/cmaaproject/train_eval.py --real_dir your_directory_
 ```bash
 python inference_pix2pix.py --ckpt the_checkpoint_you-selected_from_your-output_dir --input path_to_your_input_image --out path_to_save_the_output_image
 ```
+
+## Frontend
+
+The React + TypeScript interface is in [`web/frontend`](web/frontend). To run it locally:
+
+```bash
+cd web/frontend
+npm ci
+npm run dev
+```
+
+Open `/calligen` at the address printed by Vite. The interface runs independently; AI generation requires a separately configured backend. See the [frontend README](web/frontend/README.md) for build and preview commands.
