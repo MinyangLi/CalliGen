@@ -7,7 +7,7 @@ from pathlib import Path
 import argparse
 
 # ===== Import your ResnetGenerator model here =====
-from train_pix2pix import ResnetGenerator
+from train_eval import ResnetGenerator
 from generate_data import make_skeleton_from_bitmap, dilate_mask_to_black_strokes
 
 # def load_image_as_tensor(path, size=512):
@@ -96,6 +96,7 @@ def run_inference(ckpt_path, input_image, output_path, img_size=512, ngf=64):
     # convert & save
     img_out = tensor_to_image(fake_B)
     output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     img_out.save(output_path)
     print(f"Saved generated image to {output_path}")
 

@@ -9,10 +9,11 @@ from skimage.morphology import skeletonize
 import cv2
 
 # ========== 配置 ==========
-FONT_PATH = "/hpc2hdd/home/mli861/cmaaproject/ttf_file/字魂水云行楷(商用需授权).ttf"
-OUT_REAL_DIR = Path("data_multi/data_水运行楷/real_samples") 
-OUT_SKEL_DIR = Path("data_multi/data_水运行楷/skeleton")
-json_filepath = "unique_chars.json"
+FONT_PATH = os.environ.get("CALLIGEN_FONT_PATH", "")
+DATA_DIR = Path(os.environ.get("CALLIGEN_DATA_DIR", "data_multi"))
+OUT_REAL_DIR = DATA_DIR / "real_samples"
+OUT_SKEL_DIR = DATA_DIR / "skeleton"
+json_filepath = Path(__file__).with_name("unique_chars.json")
 
 IMG_SIZE = 512
 DILATE_KERNEL_SIZE = 3
@@ -215,6 +216,8 @@ def dilate_mask_to_black_strokes(sk_img, kernel_size=3):
 # ========== 主流程 (已修正概率选择) ==========
 
 def main():
+    if not FONT_PATH:
+        raise ValueError("Set CALLIGEN_FONT_PATH to your TTF/OTF font file.")
     print("📢 正在生成复杂样本 (总计 3500 张图)...")
     
     char_cursor = 0 

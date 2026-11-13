@@ -5,15 +5,15 @@ Adds inference/evaluation using fixed input images at checkpoint frequency.
 
 Data layout expected (you provided):
  - real images (targets): /path/to/real_samples/{char}.png
- - skeletons (inputs): /path/to/skeleton/{char}_skeleton_dilated_k3.png  (preferred)
-   fallback patterns: {char}_skeleton_dilated.png, {char}_skeleton.png
+ - skeletons (inputs): /path/to/skeleton/{char}_dilated_k3.png
+   also accepts: {char}_skeleton_dilated_k3.png
 
 Usage example:
-python train_pix2pix_resnet.py \
-  --real_dir /hpc2hdd/home/mli861/cmaaproject/data/real_samples \
-  --sk_dir  /hpc2hdd/home/mli861/cmaaproject/data/skeleton \
-  --out_dir /hpc2hdd/home/mli861/cmaaproject/pix2pix_resnet_run1 \
-  --inference_dir /hpc2hdd/home/mli861/cmaaproject/inference_skeleton \
+python train_eval.py \
+  --real_dir /path/to/data/real_samples \
+  --sk_dir  /path/to/data/skeleton \
+  --out_dir /path/to/pix2pix_run \
+  --inference_dir /path/to/inference_skeleton \
   --img_size 512 --batch 8 --max_steps 100000 --amp
 
 """
@@ -153,10 +153,13 @@ class PairedFontDataset(Dataset):
         return len(self.real_paths)
 
     def _locate_skeleton(self, base_filename):
-        dilated_name_k3 = f"{base_filename}_dilated_k3.png"
-        p_k3 = self.sk_dir / dilated_name_k3
-        if p_k3.exists():
-            return p_k3
+        for name in (
+            f"{base_filename}_dilated_k3.png",
+            f"{base_filename}_skeleton_dilated_k3.png",
+        ):
+            candidate = self.sk_dir / name
+            if candidate.exists():
+                return candidate
         return None
 
     def __getitem__(self, idx):
@@ -165,7 +168,7 @@ class PairedFontDataset(Dataset):
         sk_p = self._locate_skeleton(base_filename)
         
         if sk_p is None:
-            raise FileNotFoundError(f"Cannot find skeleton for base file '{base_filename}' in {self.sk_dir}. Expected: {base_filename}_dilated_k3.png")
+            raise FileNotFoundError(f"Cannot find skeleton for '{base_filename}' in {self.sk_dir}. Expected {base_filename}_dilated_k3.png or {base_filename}_skeleton_dilated_k3.png")
             
         real = Image.open(real_p).convert('L').convert('RGB')
         sk = Image.open(sk_p).convert('L').convert('RGB')
@@ -262,6 +265,11 @@ def train(args):
 
     # dataset & loader
     dataset = PairedFontDataset(args.real_dir, args.sk_dir, img_size=args.img_size, prefer_dilated=True)
+    if len(dataset) < args.batch:
+        raise ValueError(
+            f"Dataset has {len(dataset)} images, fewer than batch size {args.batch}. "
+            "Reduce --batch or add more training pairs."
+        )
     loader = DataLoader(dataset, batch_size=args.batch, shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
 
     # models
